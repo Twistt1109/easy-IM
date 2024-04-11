@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"sync"
 )
@@ -64,6 +65,27 @@ func (s *Server) Handler(conn net.Conn) {
 
 	// 广播消息给所有用户
 	s.Fanout(user, "已上线")
+
+	// 接受客户端发送的消息
+	go func() {
+		buf := make([]byte, 40960)
+		for {
+			n, err := conn.Read(buf)
+			if n == 0 {
+				s.Fanout(user, "已下线")
+				return
+			}
+
+			if err != nil && err != io.EOF {
+				fmt.Println("err:", err)
+				return
+			}
+
+			msg := string(buf[:n])
+
+			s.Fanout(user, msg)
+		}
+	}()
 }
 
 func (s *Server) Fanout(user *User, msg string) {
