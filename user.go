@@ -49,8 +49,21 @@ func (u *User) Offline() {
 	u.server.Fanout(u, "已下线")
 }
 
+func (u *User) SendMsg(msg string) {
+	u.conn.Write([]byte(msg))
+}
+
 func (u *User) DoMessage(msg string) {
-	u.server.Fanout(u, msg)
+	fmt.Println("---------msg", msg)
+	fmt.Println("---------msg?", msg == "who")
+	if msg == "who" {
+		for _, user := range u.server.OnlineMap {
+			onlineMsg := "[" + user.Addr + "]-" + user.Name + " 在线...\n"
+			u.SendMsg(onlineMsg)
+		}
+	} else {
+		u.server.Fanout(u, msg)
+	}
 }
 
 // 服务端 -> 客户端
